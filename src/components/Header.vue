@@ -19,8 +19,6 @@
       <a-menu-item key="praticas">Boas Práticas</a-menu-item>
 
       <a-menu-item key="ferramentas">Ferramentas</a-menu-item>
-
-      <a-menu-item key="deploy">Deploy</a-menu-item>
     </a-menu>
   </a-layout-header>
 </template>
