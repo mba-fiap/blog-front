@@ -1,5 +1,17 @@
 <template>
-  <div v-if="post" class="flex flex-col gap-4">
+  <PostSkeleton v-if="isLoading" />
+
+  <div v-else-if="isError">
+    <a-result status="404" title="Conteúdo não encontrado">
+      <template #extra>
+        <a-button type="primary" @click="$router.push('/')"
+          >Voltar para página inicial</a-button
+        >
+      </template>
+    </a-result>
+  </div>
+
+  <div v-else class="flex flex-col gap-4">
     <a-typography-title>{{ post.title }}</a-typography-title>
 
     <img
@@ -22,85 +34,50 @@
 
     <Relateds :post-id="post.id" />
   </div>
-
-  <div v-else-if="postNotFound">
-    <a-result status="404" title="Conteúdo não encontrado">
-      <template #extra>
-        <a-button type="primary" @click="$router.push('/')"
-          >Voltar para página inicial</a-button
-        >
-      </template>
-    </a-result>
-  </div>
-
-  <PostSkeleton v-else />
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useRoute } from 'vue-router'
 
-import type { IPost } from '@/interfaces/IPost'
-
-import { renderMarkdown } from '@/composables/useMarkdown'
+import { useQuery } from '@tanstack/vue-query'
 
 import PostSkeleton from '@/components/PostSkeleton.vue'
 
 import Relateds from '@/components/Relateds.vue'
 
+import { renderMarkdown } from '@/composables/useMarkdown'
+
 const route = useRoute()
 
-const post = ref<IPost | null>(null)
-
-const postNotFound = ref(false)
-
 const imgLoaded = ref(false)
+
+const slug = computed(() => route.params.slug as string)
+
+const {
+  data: post,
+  isLoading,
+  isError,
+} = useQuery({
+  queryKey: ['post', slug],
+  queryFn: () =>
+    fetch(`https://blog-back-st3d.onrender.com/posts/${slug.value}`).then(
+      res => {
+        if (!res.ok) throw new Error('Post não encontrado')
+
+        return res.json()
+      },
+    ),
+  enabled: computed(() => !!slug.value),
+})
 
 const onImgLoad = () => {
   imgLoaded.value = true
 }
 
-const fetchPost = async (slug: string) => {
-  try {
-    const response = await fetch(
-      `https://blog-back-st3d.onrender.com/posts/${slug}`,
-    )
-
-    if (!response.ok) throw new Error('Post não encontrado')
-
-    const data = (await response.json()) as IPost
-
-    post.value = data
-
-    document.title = `CodeVue - ${data.title}`
-  } catch (error) {
-    console.error(error)
-
-    postNotFound.value = true
-
-    document.title = 'CodeVue - Conteúdo não encontrado'
-  }
-}
-
-const htmlContent = computed(() => {
-  if (!post.value) return ''
-
-  return renderMarkdown(post.value.content)
-})
-
-watch(
-  () => route.params.slug,
-  slug => {
-    post.value = null
-
-    postNotFound.value = false
-
-    imgLoaded.value = false
-
-    fetchPost(slug as string)
-  },
-  { immediate: true },
+const htmlContent = computed(() =>
+  post.value ? renderMarkdown(post.value.content) : '',
 )
 </script>
 
