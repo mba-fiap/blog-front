@@ -6,12 +6,17 @@
           :src="post.thumb"
           :alt="post.title"
           loading="lazy"
-          class="absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-500"
-          :class="{ 'opacity-0': !loaded, 'opacity-100': loaded }"
-          @load="onLoad"
+          :class="[
+            'absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-500',
+            { 'opacity-0': !imgLoaded, 'opacity-100': imgLoaded },
+          ]"
+          @load="onImgLoad"
         />
 
-        <div v-if="!loaded" class="w-full h-full bg-gray-300 animate-pulse" />
+        <div
+          v-if="!imgLoaded"
+          class="w-full h-full bg-gray-300 animate-pulse"
+        />
       </div>
     </template>
 
@@ -24,11 +29,15 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 
-defineProps({ post: Object })
+import type { IPost } from '@/interfaces/IPost'
 
-const loaded = ref(false)
+defineProps<{
+  post: IPost
+}>()
 
-const onLoad = () => {
-  loaded.value = true
+const imgLoaded = ref(false)
+
+const onImgLoad = () => {
+  imgLoaded.value = true
 }
 </script>

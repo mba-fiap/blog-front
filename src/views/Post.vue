@@ -5,8 +5,14 @@
     <img
       :src="post.image"
       :alt="post.title"
-      class="w-full h-auto !rounded-b-lg"
+      :class="[
+        'w-full h-auto !rounded-b-lg transition-opacity duration-500',
+        { 'opacity-0': !imgLoaded, 'opacity-100': imgLoaded },
+      ]"
+      @load="onImgLoad"
     />
+
+    <div v-if="!imgLoaded" class="w-full h-96 bg-gray-300 animate-pulse" />
 
     <div :class="$style['post-content']">
       <a-typography>
@@ -35,7 +41,9 @@ import { ref, computed, watch } from 'vue'
 
 import { useRoute } from 'vue-router'
 
-import { posts } from '../data/posts'
+import { posts } from '@/data/posts'
+
+import type { IPost } from '@/interfaces/IPost'
 
 import { renderMarkdown } from '@/composables/useMarkdown'
 
@@ -44,21 +52,20 @@ import Relateds from '../components/Relateds.vue'
 
 const route = useRoute()
 
-const post = ref<{
-  id: number
-  slug: string
-  title: string
-  image: string
-  thumb: string
-  content: string
-} | null>(null)
+const post = ref<IPost | null>(null)
 
 const postNotFound = ref(false)
+
+const imgLoaded = ref(false)
+
+const onImgLoad = () => {
+  imgLoaded.value = true
+}
 
 const handleSetCurrentPost = () => {
   const postSlug = route.params.slug as string
 
-  const currentPost = posts.find(post => post.slug === postSlug)
+  const currentPost = posts.find((item: IPost) => item.slug === postSlug)
 
   if (!currentPost) {
     postNotFound.value = true

@@ -1,4 +1,6 @@
-export const posts = [
+import type { IPost } from '@/interfaces/IPost'
+
+export const posts: IPost[] = [
   {
     id: 1,
     slug: 'como-criar-um-blog-com-vuejs',
