@@ -41,14 +41,13 @@ import { ref, computed, watch } from 'vue'
 
 import { useRoute } from 'vue-router'
 
-import { posts } from '@/data/posts'
-
 import type { IPost } from '@/interfaces/IPost'
 
 import { renderMarkdown } from '@/composables/useMarkdown'
 
 import PostSkeleton from '@/components/PostSkeleton.vue'
-import Relateds from '../components/Relateds.vue'
+
+import Relateds from '@/components/Relateds.vue'
 
 const route = useRoute()
 
@@ -62,34 +61,44 @@ const onImgLoad = () => {
   imgLoaded.value = true
 }
 
-const handleSetCurrentPost = () => {
-  const postSlug = route.params.slug as string
+const fetchPost = async (slug: string) => {
+  try {
+    const response = await fetch(
+      `https://blog-back-st3d.onrender.com/posts/${slug}`,
+    )
 
-  const currentPost = posts.find((item: IPost) => item.slug === postSlug)
+    if (!response.ok) throw new Error('Post não encontrado')
 
-  if (!currentPost) {
+    const data = (await response.json()) as IPost
+
+    post.value = data
+
+    document.title = `CodeVue - ${data.title}`
+  } catch (error) {
+    console.error(error)
+
     postNotFound.value = true
 
     document.title = 'CodeVue - Conteúdo não encontrado'
-
-    return
   }
-
-  post.value = currentPost
-
-  document.title = `CodeVue - ${currentPost?.title}`
 }
 
 const htmlContent = computed(() => {
   if (!post.value) return ''
 
-  return renderMarkdown(post.value?.content)
+  return renderMarkdown(post.value.content)
 })
 
 watch(
   () => route.params.slug,
-  () => {
-    handleSetCurrentPost()
+  slug => {
+    post.value = null
+
+    postNotFound.value = false
+
+    imgLoaded.value = false
+
+    fetchPost(slug as string)
   },
   { immediate: true },
 )
